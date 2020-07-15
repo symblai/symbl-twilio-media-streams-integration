@@ -96,8 +96,8 @@ app.ws("/media", (ws, req) => {
         console.log('Connection Id: ', id);
         const connection = await symblService.startConnection(id, {
             speaker: { // Optional, if not specified, will simply not send an email in the end.
-                userId: 'toshish@symbl.ai', // Update with valid email
-                name: 'Toshish'
+                userId: 'john@example.com', // Update with valid email
+                name: 'John'
             },
         });
 
