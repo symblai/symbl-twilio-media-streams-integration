@@ -35,12 +35,15 @@ console.log('App is starting with config: \n', JSON.stringify({
     webHookDomain
 }, null, 2));
 
-let participants = 0;
+// const accountSid = process.env.TWILIO_ACCOUNT_SID;
+// const authToken = process.env.TWILIO_AUTH_TOKEN;
+// const client = require('twilio')(accountSid, authToken);
 
 // Responds with Twilio instructions to begin the stream
 app.post("/twiml", (request, response) => {
     console.log('Incoming Call detected.');
     const {From} = request.body;
+
     if (mode === 'receive_call') {
         console.log('Receiving Call from : ', From);
         const twimlResponse = new VoiceResponse();
@@ -51,13 +54,14 @@ app.post("/twiml", (request, response) => {
         response.type('text/xml');
         response.send(twimlResponse.toString());
     } else if (mode === 'conference') {
-        participants = participants + 1;
+        // Conference: caller 1 -> Common Number <- caller 2
+
         console.log('Joining in Conference : ', From);
         const twimlResponse = new VoiceResponse();
 
         const conferenceName = "Twilio-Symbl Test Conference";
 
-        console.log('Starting Media stream. Track Mode: ', trackMode);
+        console.log('Starting Media stream. Track Mode: ');
         twimlResponse.connect()
             .stream({
                 url: `wss://${webHookDomain}/media`, // Replace with your WebHook URL
@@ -106,7 +110,7 @@ app.ws("/media", async (ws, req) => {
             console.log('Twilio Media Stream connected for: ', from);
 
             speaker = { // Optional, if not specified, will simply not send an email in the end.
-                userId: 'toshish@symbl.ai', /*from ? `${from}` : 'john@example.com',*/ // Update with valid email. If this is not email id, email will not be sent.
+                userId: 'john@example.com', /*from ? `${from}` : 'john@example.com',*/ // Update with valid email. If this is not email id, email will not be sent.
                 name: from ? `${from}` : 'John'
             };
 
@@ -131,7 +135,7 @@ app.ws("/media", async (ws, req) => {
             symblConnectionHelper = new SymblConnectionHelper({sdk, speaker, handlers});
 
             console.log('Symbl: Starting Connection.', speaker);
-            connection = await symblConnectionHelper.startConnection(id);
+            connection = await symblConnectionHelper.startConnection(id, {speaker});
             console.log('Symbl: Connection Started.', speaker, connection.connectionId);
         } else if (msg.event === 'media') {
             if (connection) {
@@ -140,82 +144,12 @@ app.ws("/media", async (ws, req) => {
         }
     });
 
-    mediaStream.on("close", () => {
-        connection.stop();
-        console.log('Symbl: Connection Stopped.', speaker, connection.connectionId);
+    mediaStream.on("close", async () => {
+        const conversationData = await connection.stop();
+        console.log('Symbl: Connection Stopped.', speaker);
+        console.log('Symbl: Conversation ID: ', conversationData.conversationId);
+        console.log('Symbl: Conversation ID: ', conversationData.summaryUrl);
     });
-
-
-    //
-    // const audioStream = new Transform({
-    //     transform: (chunk, encoding, callback) => {
-    //         const msg = JSON.parse(chunk.toString("utf8"));
-    //         // console.log(msg);
-    //         if (msg.event === "start") {
-    //             callSid = msg.start.callSid;
-    //             console.log(`Captured call ${callSid}`);
-    //
-    //             from = msg.start.customParameters.from;
-    //             console.log('Twilio Media Stream connected for: ', from);
-    //         }
-    //         // Only process media messages
-    //         if (msg.event !== "media") return callback();
-    //         // console.log(msg);
-    //
-    //         // This is mulaw
-    //         return callback(null, JSON.stringify({
-    //             track: msg.media.track,
-    //             payload: msg.media.payload
-    //         }));
-    //     },
-    // });
-    //
-    //
-    //
-    // console.log('Starting Symbl Connection.', from);
-    // connection = await symblService.startConnection(id, {
-    //     speaker: { // Optional, if not specified, will simply not send an email in the end.
-    //         userId: from ? `${from}` : 'john@example.com', // Update with valid email.
-    //         name: from ? `${from}` : 'John'
-    //     },
-    // });
-    //
-    // console.log('Symbl Connection Started.', connection.connectionId);
-    //
-    // mediaStream
-    //     .pipe(audioStream)
-    //     .on('data', (data) => {
-    //         const json = JSON.parse(data);
-    //         const {payload} = json;
-    //         const buffer = Buffer.from(payload, "base64");
-    //         // console.log(data);
-    //         connection.sendAudio(buffer);
-    //     })
-
-
-    // Pipe our streams together
-    // mediaStream.on('data', (data) => {
-    //     const msg = JSON.parse(data.toString("utf8"));
-    //     // console.log(msg);
-    //     if (msg.event === "start") {
-    //         callSid = msg.start.callSid;
-    //         console.log(`Captured call ${callSid}`);
-    //     }
-    //     // Only process media messages
-    //     if (msg.event !== "media") return ;
-    //     console.log(msg);
-    //     if (msg.media.track === 'outbound') {
-    //         // Speaker 1 (John)
-    //         connection.sendAudio(Buffer.from(msg.media.payload, "base64"));
-    //     } else if (msg.media.track === 'inbound') {
-    //         // Speaker 2 (Mary)
-    //         if (secondConnection) {
-    //             connection.sendAudio(Buffer.from(msg.media.payload, "base64"));
-    //         }
-    //     }
-    // });
-
-
 });
 
 const listener = app.listen(3000, () => {
