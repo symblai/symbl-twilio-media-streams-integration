@@ -137,6 +137,7 @@ app.ws("/media", async (ws, req) => {
             console.log('Symbl: Starting Connection.', speaker);
             connection = await symblConnectionHelper.startConnection(id, {speaker});
             console.log('Symbl: Connection Started.', speaker, connection.connectionId);
+            console.log('Symbl: Conversation ID:', connection.conversationId);
         } else if (msg.event === 'media') {
             if (connection) {
                 symblConnectionHelper.sendAudio(msg.media.payload, 'base64');
