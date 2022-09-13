@@ -6,7 +6,7 @@ const SymblConnectionHelper = require('./symbl/SymblConnectionHelper');
 const TwilioClient = require("twilio");
 const uuid = require('uuid').v4;
 const urlencoded = require('body-parser').urlencoded;
-const {sdk} = require("symbl-node");
+
 // const twilioClient = new TwilioClient(accountSid, authToken);
 const app = express();
 // extend express app with app.ws()
@@ -19,15 +19,10 @@ app.use(urlencoded({extended: false}));
 const mode = process.env.MODE || 'receive_call';
 const webHookDomain = process.env.WEBHOOK_DOMAIN;
 
-const VoiceResponse = TwilioClient.twiml.VoiceResponse;
+const agentPhone = process.env.AGENT_PHONE
+const customerPhone = process.env.CUSTOMER_PHONE
 
-(async () => {
-    return sdk.init({
-        appId: process.env.SYMBL_APP_ID,
-        appSecret: process.env.SYMBL_APP_SECRET
-    });
-})();
-console.log('Symbl SDK Initialized.');
+const VoiceResponse = TwilioClient.twiml.VoiceResponse;
 
 
 console.log('App is starting with config: \n', JSON.stringify({
@@ -35,12 +30,15 @@ console.log('App is starting with config: \n', JSON.stringify({
     webHookDomain
 }, null, 2));
 
+const participantConnections = {}
+
+
 // const accountSid = process.env.TWILIO_ACCOUNT_SID;
 // const authToken = process.env.TWILIO_AUTH_TOKEN;
 // const client = require('twilio')(accountSid, authToken);
 
 // Responds with Twilio instructions to begin the stream
-app.post("/twiml", (request, response) => {
+app.post("/twilio/twiml", (request, response) => {
     console.log('Incoming Call detected.');
     const {From} = request.body;
 
@@ -49,7 +47,7 @@ app.post("/twiml", (request, response) => {
         const twimlResponse = new VoiceResponse();
         twimlResponse.connect()
             .stream({
-                url: `wss://${webHookDomain}/media`, // Replace with your WebHook URL
+                url: `wss://${webHookDomain}/twilio/media`, // Replace with your WebHook URL
             });
         response.type('text/xml');
         response.send(twimlResponse.toString());
@@ -64,7 +62,7 @@ app.post("/twiml", (request, response) => {
         console.log('Starting Media stream. Track Mode: ');
         twimlResponse.connect()
             .stream({
-                url: `wss://${webHookDomain}/media`, // Replace with your WebHook URL
+                url: `wss://${webHookDomain}/twilio/media`, // Replace with your WebHook URL
                 track: 'inbound_track'
             }).parameter({name: 'from', value: From});
         // Quick Conference, no beeps or music. Start/Stop as participants dial-in/hang up.
@@ -72,7 +70,7 @@ app.post("/twiml", (request, response) => {
             startConferenceOnEnter: true,
             endConferenceOnExit: true,
             beep: false,
-            waitUrl: `http://${webHookDomain}`
+            waitUrl: `https://${webHookDomain}`
         }, conferenceName);
         response.type('text/xml');
         response.send(twimlResponse.toString());
@@ -81,11 +79,44 @@ app.post("/twiml", (request, response) => {
     }
 });
 
+app.post("/twilio/statuschange", async (request, response) => {
+    const {From, CallStatus} = request.body;
+    console.log(`Call status Changed for ${From} to '${CallStatus}'`);
+    const connection = participantConnections[From];
+    if (CallStatus === 'completed') {
+        delete participantConnections[From]
+        subscribeConnection.send(JSON.stringify({
+            type: 'connection_stopped',
+            speaker: {
+                userId: `${From.trim()}`,
+                name: getName(From)
+            },
+            connectionId: connection.connectionId,
+            conversationId: connection.conversationId
+        }));
+
+    }
+
+    if (Object.keys(participantConnections).length <= 0) {
+        id = undefined;
+        const conversationData = await connection.stop();
+        console.log('Symbl: Connection Stopped.', From);
+        console.log('Symbl: Conversation ID: ', conversationData.conversationId);
+        console.log('Symbl: Conversation ID: ', conversationData.summaryUrl);
+    }
+
+});
+
+const getName = (phoneNumber) => {
+    return phoneNumber ? phoneNumber.trim() === agentPhone ? 'Agent' : 'Customer' : 'Unknown Caller';
+}
 
 let id = undefined;
+let subscribeConnection = undefined;
+let conversationId = undefined;
 
 // Media stream websocket endpoint
-app.ws("/media", async (ws, req) => {
+app.ws("/twilio/media", async (ws, req) => {
     // Audio Stream coming from Twilio
     const mediaStream = websocketStream(ws);
     let callSid;
@@ -106,12 +137,12 @@ app.ws("/media", async (ws, req) => {
             callSid = msg.start.callSid;
             console.log(`Captured call ${callSid}`);
 
-            from = msg.start.customParameters.from;
+            from = msg.start.customParameters.from.trim();
             console.log('Twilio Media Stream connected for: ', from);
 
             speaker = { // Optional, if not specified, will simply not send an email in the end.
-                userId: 'john@example.com', /*from ? `${from}` : 'john@example.com',*/ // Update with valid email. If this is not email id, email will not be sent.
-                name: from ? `${from}` : 'John'
+                userId: `${from}`, /*from ? `${from}` : 'john@example.com',*/ // Update with valid email. If this is not email id, email will not be sent.
+                name: getName(from)
             };
 
             const handlers = {
@@ -119,12 +150,8 @@ app.ws("/media", async (ws, req) => {
                     // For live transcription
                     if (data) {
                         const {punctuated} = data;
-                        console.log(`Live: ${punctuated && punctuated.transcript}`);
+                        console.log(`${speaker.name}: ${punctuated && punctuated.transcript}`);
                     }
-                },
-                'onMessage': (data) => {
-                    // When a processed message is available
-                    console.log('onMessage', JSON.stringify(data));
                 },
                 'onInsight': (data) => {
                     // When an insight is detected
@@ -132,12 +159,22 @@ app.ws("/media", async (ws, req) => {
                 }
             };
 
-            symblConnectionHelper = new SymblConnectionHelper({sdk, speaker, handlers});
+            symblConnectionHelper = new SymblConnectionHelper({speaker, handlers});
 
             console.log('Symbl: Starting Connection.', speaker);
             connection = await symblConnectionHelper.startConnection(id, {speaker});
+            conversationId = connection.conversationId;
+            if (subscribeConnection && subscribeConnection.readyState === 1) {
+                subscribeConnection.send(JSON.stringify({
+                    type: 'connection_started',
+                    speaker,
+                    connectionId: id,
+                    conversationId: conversationId
+                }));
+            }
             console.log('Symbl: Connection Started.', speaker, connection.connectionId);
             console.log('Symbl: Conversation ID:', connection.conversationId);
+            participantConnections[from] = connection;
         } else if (msg.event === 'media') {
             if (connection) {
                 symblConnectionHelper.sendAudio(msg.media.payload, 'base64');
@@ -146,11 +183,34 @@ app.ws("/media", async (ws, req) => {
     });
 
     mediaStream.on("close", async () => {
-        const conversationData = await connection.stop();
-        console.log('Symbl: Connection Stopped.', speaker);
-        console.log('Symbl: Conversation ID: ', conversationData.conversationId);
-        console.log('Symbl: Conversation ID: ', conversationData.summaryUrl);
+
+
+        // if (subscribeConnection && subscribeConnection.readyState === 1) {
+        //     subscribeConnection.send(JSON.stringify({
+        //         speaker,
+        //         connectionId: id,
+        //         conversationId: conversationId
+        //     }));
+        // }
     });
+});
+
+app.ws("/symbl/updates", async (ws, req) => {
+    subscribeConnection = ws;
+    console.log('New connection received.');
+    if (Object.keys(participantConnections).length > 0) {
+        Object.keys(participantConnections).forEach(from => {
+            subscribeConnection.send(JSON.stringify({
+                type: 'connection_exists',
+                speaker: {
+                    userId: `${from}`,
+                    name: getName(from)
+                },
+                connectionId: participantConnections[from].connectionId,
+                conversationId: participantConnections[from].conversationId
+            }));
+        });
+    }
 });
 
 const listener = app.listen(3000, () => {

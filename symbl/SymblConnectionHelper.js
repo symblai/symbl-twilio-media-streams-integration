@@ -1,9 +1,16 @@
 const uuid = require('uuid').v4;
+const {sdk} = require('@symblai/symbl-js');
+(async () => {
+    return sdk.init({
+        appId: process.env.SYMBL_APP_ID,
+        appSecret: process.env.SYMBL_APP_SECRET
+    });
+})();
+console.log('Symbl SDK Initialized.');
 class SymblConnectionHelper {
 
-    constructor({sdk, speaker, handlers}) {
+    constructor({speaker, handlers}) {
         this.connection = undefined;
-        this.sdk = sdk;
         this.speaker = speaker;
         this.handlers = handlers;
         this._hash = uuid();
@@ -19,9 +26,9 @@ class SymblConnectionHelper {
      */
     async startConnection(id, {speaker, insightTypes, config} = {}) {
         this.speaker = speaker;
-        this.connection = await this.sdk.startRealtimeRequest({
+        this.connection = await sdk.startRealtimeRequest({
             id,
-            insightTypes: insightTypes || ["action_item", "question"],
+            insightTypes: insightTypes || ["action_item", "question", "follow_up"],
             config: {
                 meetingTitle: 'My Test Meeting',
                 confidenceThreshold: 0.7,
@@ -29,6 +36,11 @@ class SymblConnectionHelper {
                 languageCode: "en-US",
                 sampleRateHertz: 8000,
                 encoding: 'MULAW',
+                sentiment: true,
+                trackers: {
+                    enableAllTrackers: true,
+                    interimResults: true
+                },
                 ...config
             },
             speaker: this.speaker,
