@@ -30,8 +30,9 @@ console.log('App is starting with config: \n', JSON.stringify({
     webHookDomain
 }, null, 2));
 
-const participantConnections = {}
-
+const participantConnections = {};
+const streamConnections = {};
+const streamParticipants = {};
 
 // const accountSid = process.env.TWILIO_ACCOUNT_SID;
 // const authToken = process.env.TWILIO_AUTH_TOKEN;
@@ -85,6 +86,7 @@ app.post("/twilio/statuschange", async (request, response) => {
     const connection = participantConnections[From];
     if (CallStatus === 'completed') {
         delete participantConnections[From]
+        console.log('Removed from participantConnections', participantConnections)
         subscribeConnection.send(JSON.stringify({
             type: 'connection_stopped',
             speaker: {
@@ -101,8 +103,9 @@ app.post("/twilio/statuschange", async (request, response) => {
         id = undefined;
         const conversationData = await connection.stop();
         console.log('Symbl: Connection Stopped.', From);
-        console.log('Symbl: Conversation ID: ', conversationData.conversationId);
-        console.log('Symbl: Conversation ID: ', conversationData.summaryUrl);
+        // console.log('Symbl: Conversation ID: ', conversationData.conversationId);
+        // console.log('Symbl: Conversation ID: ', conversationData.summaryUrl);
+
     }
 
 });
@@ -113,27 +116,30 @@ const getName = (phoneNumber) => {
 
 let id = undefined;
 let subscribeConnection = undefined;
-let conversationId = undefined;
 
 // Media stream websocket endpoint
 app.ws("/twilio/media", async (ws, req) => {
     // Audio Stream coming from Twilio
     const mediaStream = websocketStream(ws);
-    let callSid;
-    // const client = new TwilioClient();
-    let from;
-    let symblConnectionHelper;
-    let connection;
-    let speaker;
 
-    if (!id) {
-        id = uuid();
-    }
 
     mediaStream.on('data', async (data) => {
+
+        let callSid;
+        // const client = new TwilioClient();
+        let from;
+
+        let speaker;
+
+        if (!id) {
+            id = uuid();
+        }
         const msg = JSON.parse(data.toString("utf8"));
-        // console.log(msg);
+        if (msg.event !== 'media') {
+            console.log(msg)
+        }
         if (msg.event === "start") {
+
             callSid = msg.start.callSid;
             console.log(`Captured call ${callSid}`);
 
@@ -149,36 +155,60 @@ app.ws("/twilio/media", async (ws, req) => {
                 'onSpeechDetected': (data) => {
                     // For live transcription
                     if (data) {
-                        const {punctuated} = data;
-                        console.log(`${speaker.name}: ${punctuated && punctuated.transcript}`);
+                        const {punctuated, user} = data;
+                        console.log(`${user.name}: ${punctuated && punctuated.transcript}`);
                     }
                 },
                 'onInsight': (data) => {
                     // When an insight is detected
                     console.log('onInsight', JSON.stringify(data));
+                },
+                'onMessage': (data) => {
+                    // When an insight is detected
+                    console.log('onMessage', JSON.stringify(data));
                 }
             };
 
-            symblConnectionHelper = new SymblConnectionHelper({speaker, handlers});
+            const symblConnectionHelper = new SymblConnectionHelper({speaker, handlers});
 
             console.log('Symbl: Starting Connection.', speaker);
-            connection = await symblConnectionHelper.startConnection(id, {speaker});
-            conversationId = connection.conversationId;
+            const connection = await symblConnectionHelper.startConnection(id, {speaker});
+            connection.from = from;
+            const conversationId = connection.conversationId;
             if (subscribeConnection && subscribeConnection.readyState === 1) {
                 subscribeConnection.send(JSON.stringify({
                     type: 'connection_started',
                     speaker,
                     connectionId: id,
-                    conversationId: conversationId
+                    conversationId
                 }));
             }
             console.log('Symbl: Connection Started.', speaker, connection.connectionId);
-            console.log('Symbl: Conversation ID:', connection.conversationId);
+            console.log('Symbl: Conversation ID:', conversationId);
             participantConnections[from] = connection;
+            streamConnections[msg.streamSid] = connection;
+            streamParticipants[msg.streamSid] = from
+            console.log('Added to participantConnections', participantConnections)
+            console.log('Added to streamConnections', streamConnections)
+            console.log('Added to streamParticipants', streamParticipants)
         } else if (msg.event === 'media') {
+            // console.log(msg)
+            const connection = streamConnections[msg.streamSid];
             if (connection) {
-                symblConnectionHelper.sendAudio(msg.media.payload, 'base64');
+                const buffer = Buffer.from(msg.media.payload, 'base64');
+                connection.sendAudio(buffer);
             }
+        } else if (msg.event === 'stop') {
+            const connection = streamConnections[msg.streamSid];
+            if (connection) {
+                console.log('Symbl: Connection is stopping.', connection);
+                connection.stop();
+                console.log('Symbl: Connection stopped.', connection);
+            }
+            delete streamConnections[msg.streamSid];
+            delete streamParticipants[msg.streamSid];
+            console.log('Removed from streamConnections', streamConnections)
+            console.log('Removed from streamParticipants', streamParticipants)
         }
     });
 

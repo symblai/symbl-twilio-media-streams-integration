@@ -1,11 +1,6 @@
 const uuid = require('uuid').v4;
-const {sdk} = require('@symblai/symbl-js');
-(async () => {
-    return sdk.init({
-        appId: process.env.SYMBL_APP_ID,
-        appSecret: process.env.SYMBL_APP_SECRET
-    });
-})();
+const trackers = require('./trackers');
+
 console.log('Symbl SDK Initialized.');
 class SymblConnectionHelper {
 
@@ -14,6 +9,16 @@ class SymblConnectionHelper {
         this.speaker = speaker;
         this.handlers = handlers;
         this._hash = uuid();
+        const {SDK} = require('@symblai/symbl-js');
+        this.sdk = new SDK();
+        console.log('Cache', this.sdk.cache.cacheStore.store);
+        (async () => {
+            return this.sdk.init({
+                appId: process.env.SYMBL_APP_ID,
+                appSecret: process.env.SYMBL_APP_SECRET
+            });
+        })();
+
     }
 
     /**
@@ -26,8 +31,9 @@ class SymblConnectionHelper {
      */
     async startConnection(id, {speaker, insightTypes, config} = {}) {
         this.speaker = speaker;
-        this.connection = await sdk.startRealtimeRequest({
+        this.connection = await this.sdk.startRealtimeRequest({
             id,
+            basePath: 'https://api-labs.symbl.ai',
             insightTypes: insightTypes || ["action_item", "question", "follow_up"],
             config: {
                 meetingTitle: 'My Test Meeting',
@@ -38,11 +44,21 @@ class SymblConnectionHelper {
                 encoding: 'MULAW',
                 sentiment: true,
                 trackers: {
-                    enableAllTrackers: true,
+                    // enableAllTrackers: true,
                     interimResults: true
+                },
+
+                "redaction": {
+                    // Enable identification of PII/PCI information
+                    "identifyContent": true, // By default false
+                    // Enable redaction of PII/PCI information
+                    "redactContent": false, // By default false
+                    // Use custom string "[PII_PCI_ENTITY]" to replace PII/PCI information with
+                    "redactionString": "*****" // By default ****
                 },
                 ...config
             },
+            trackers,
             speaker: this.speaker,
             handlers: {
                 'onSpeechDetected': this.onSpeechDetected.bind(this),
