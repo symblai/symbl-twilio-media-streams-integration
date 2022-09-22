@@ -47,7 +47,12 @@ class SymblConnectionHelper {
                     // enableAllTrackers: true,
                     interimResults: true
                 },
-
+                customVocabularyStrength: [
+                    {text: 'Brittany'},
+                    {text: 'Toshish'},
+                    {text: 'QR Code'},
+                    {text: 'Sunday'}
+                ],
                 "redaction": {
                     // Enable identification of PII/PCI information
                     "identifyContent": true, // By default false

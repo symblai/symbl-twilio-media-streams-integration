@@ -8,7 +8,10 @@ const trackers = [
             "I am having issue with billing",
             "I cannot see my bill",
             "bill is not showing up",
-            "the amount in the bill is wrong"
+            "the amount in the bill is wrong",
+            "there is something wrong with my bill",
+            "it looks like there is something wrong with my bill this month",
+
         ]
     },
     {
@@ -26,7 +29,9 @@ const trackers = [
             "it is working now",
             "yes I can see my bill now",
             "issue is fixed",
-            "not running into problem"
+            "not running into problem",
+            "thanks for resolving this for me",
+            "thanks for fixing this issue"
         ]
     },
     {
@@ -34,6 +39,7 @@ const trackers = [
         vocabulary: [
             "thank you so much",
             "thanks for your help",
+            'thanks so much for your help',
             "appreciate it",
             "it is working now",
             "that's great",
@@ -44,7 +50,8 @@ const trackers = [
             "I am happy",
             "I love how you fixed it quickly",
             "my experience was really good",
-            "you are great"
+            "you are great",
+            "that makes me so happy"
 
         ]
     },
@@ -84,6 +91,30 @@ const trackers = [
         ]
     },
     {
+        name: "Symbl.Goodbyes",
+        vocabulary: [
+            "Good bye",
+            "bye",
+            "bye-bye"
+        ]
+    },
+    {
+        name: "Product Experience Issue",
+        vocabulary: [
+            "it is not clear what that is",
+            "i probably missed reading everything on the screen before accepting",
+            "i got confused on the app"
+        ]
+    },
+    {
+        name: "Offered Refund",
+        vocabulary: [
+            "offer a full refund",
+            "i would like to offer a full refund",
+            "can I offer you a refund"
+        ]
+    },
+    {
         name: "Frustration",
         vocabulary: [
             "I am really fed up with",
@@ -96,7 +127,10 @@ const trackers = [
             "really bad service",
             "poor customer service",
             "annoying",
-            "I have given up"
+            "I have given up",
+            "got frustrated",
+            "it is a mistake",
+            "it's a mistake"
         ]
     },
 
