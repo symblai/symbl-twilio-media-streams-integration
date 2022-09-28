@@ -1,7 +1,7 @@
 {
   "name": "symbl-twilio-media-streams-integration",
   "version": "1.0.0",
-  "description": "",
+  "description": "Access and Extend Symbl.ai's continuous conversation intelligence in your Twilio Media Streams, digitally transforming traditional voice application streams into AI with JavaScript & Symbl.ai's APIs on top of transcription.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",

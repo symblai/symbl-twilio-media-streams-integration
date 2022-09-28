@@ -1,0 +1,7 @@
+{
+  "name": "Symbl <> Twilio Media Streams Integration",
+  "description": "Access and Extend Symbl.ai's continuous conversation intelligence in your Twilio Media Streams, digitally transforming traditional voice application streams into AI with JavaScript & Symbl.ai's APIs on top of transcription.",
+  "repository": "https://github.com/symblai/symbl-twilio-media-streams-integration",
+  "logo": "https://symbl.ai/wp-content/uploads/2020/07/Symbl-Logo-1.svg",
+  "keywords": ["node", "express", "symbl", "twilio"]
+}
