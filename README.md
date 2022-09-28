@@ -6,7 +6,9 @@ Access and Extend Symbl.ai's continuous conversation intelligence in your Twilio
 
 ## Getting Started
 
-Start in developemnt mode
+Before you can start the project, you need to populate the enviroment variables mentioned in .env.example file
+
+Start in development mode
 
 ```bash
 npm run start:dev
