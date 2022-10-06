@@ -1,21 +1,34 @@
 require("dotenv").config();
+
 const express = require("express");
 const expressWebSocket = require("express-ws");
 const websocketStream = require("websocket-stream/stream");
-const SymblConnectionHelper = require("./symbl/SymblConnectionHelper");
-const TwilioClient = require("twilio");
+
 const uuid = require("uuid").v4;
-const urlencoded = require("body-parser").urlencoded;
+const TwilioClient = require("twilio");
+const bodyParser = require("body-parser");
+
+const SymblConnectionHelper = require("./src/symbl/SymblConnectionHelper");
+const twilioRouter = require("./src/routes/twilio.route");
 
 // const twilioClient = new TwilioClient(accountSid, authToken);
+
 const app = express();
+app.use(bodyParser.json());
+app.use(
+  bodyParser.urlencoded({
+    extended: true,
+  })
+);
+app.get("/", (req, res) => {
+  res.json({ message: "ok" });
+});
+app.use("/twilio", twilioRouter);
 
 // extend express app with app.ws()
 expressWebSocket(app, null, {
   perMessageDeflate: false,
 });
-
-app.use(urlencoded({ extended: false }));
 
 const mode = process.env.MODE || "receive_call";
 const webHookDomain = process.env.WEBHOOK_DOMAIN;

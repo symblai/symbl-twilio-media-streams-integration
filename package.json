@@ -4,9 +4,9 @@
   "description": "Access and Extend Symbl.ai's continuous conversation intelligence in your Twilio Media Streams, digitally transforming traditional voice application streams into AI with JavaScript & Symbl.ai's APIs on top of transcription.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start:dev": "nodemon src/index.js",
-    "start": "node src/index.js"
+    "start": "node index.js",
+    "start:dev": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
