@@ -14,15 +14,13 @@ const twilioRouter = require("./src/routes/twilio.route");
 // const twilioClient = new TwilioClient(accountSid, authToken);
 
 const app = express();
+
 app.use(bodyParser.json());
 app.use(
   bodyParser.urlencoded({
     extended: true,
   })
 );
-app.get("/", (req, res) => {
-  res.json({ message: "ok" });
-});
 app.use("/twilio", twilioRouter);
 
 // extend express app with app.ws()
@@ -37,18 +35,6 @@ const agentPhone = process.env.AGENT_PHONE;
 const customerPhone = process.env.CUSTOMER_PHONE;
 
 const VoiceResponse = TwilioClient.twiml.VoiceResponse;
-
-console.log(
-  "App is starting with config: \n",
-  JSON.stringify(
-    {
-      mode,
-      webHookDomain,
-    },
-    null,
-    2
-  )
-);
 
 const participantConnections = {};
 const streamConnections = {};
@@ -280,4 +266,15 @@ app.ws("/symbl/updates", async (ws, req) => {
 
 const listener = app.listen(3000, () => {
   console.log("Your app is listening on port " + listener.address().port);
+  console.log(
+    "Config",
+    JSON.stringify(
+      {
+        mode,
+        webHookDomain,
+      },
+      null,
+      2
+    )
+  );
 });
