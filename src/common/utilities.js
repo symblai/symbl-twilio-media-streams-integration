@@ -1,3 +1,13 @@
-const Utilities = () => {};
+function getName(phoneNumber) {
+  const agentPhone = process.env.AGENT_PHONE;
 
-export default Utilities;
+  return phoneNumber
+    ? phoneNumber.trim() === agentPhone
+      ? "Agent"
+      : "Customer"
+    : "Unknown Caller";
+}
+
+module.exports = {
+  getName,
+};
