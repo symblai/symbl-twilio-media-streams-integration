@@ -1,0 +1,28 @@
+name: Deploy
+
+on:
+  release:
+    branches: [main]
+    types: [published]
+
+  workflow_dispatch:
+
+env:
+  HEROKU_API_KEY: ${{ '2e8b30a0-f9de-4315-aa05-0b5aa367145e' }}
+  APP_NAME: ${{ 'symbl-twilio-media-stream' }}
+
+jobs:
+  deploy:
+    name: Deploy to Heroku
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Docker build
+        run: docker login --username=_ --password=$HEROKU_API_KEY registry.heroku.com
+
+      - name: Publish
+        run: |
+          heroku container:push web -a $APP_NAME
+          heroku container:release web -a $APP_NAME
