@@ -141,10 +141,10 @@ const trackers = [
   {
     name: "Credit Card Issue",
     vocabulary: [
-      "no longer used",
-      "card expired",
+      "credit card has expired",
+      "credit card is no longer used",
       "incorrect cvv",
-      "card inactive",
+      "credit card inactive",
     ],
   },
 ];
