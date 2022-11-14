@@ -138,6 +138,15 @@ const trackers = [
       "invoice not paid",
     ],
   },
+  {
+    name: "Credit Card Issue",
+    vocabulary: [
+      "no longer used",
+      "card expired",
+      "incorrect cvv",
+      "card inactive",
+    ],
+  },
 ];
 
 module.exports = trackers;
