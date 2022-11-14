@@ -127,6 +127,17 @@ const trackers = [
       "it's a mistake",
     ],
   },
+  {
+    name: "Payment Overdue",
+    vocabulary: [
+      "past due",
+      "bill is overdue",
+      "payment is overdue",
+      "payment pending",
+      "invoice not processed",
+      "invoice not paid",
+    ],
+  },
 ];
 
 module.exports = trackers;
