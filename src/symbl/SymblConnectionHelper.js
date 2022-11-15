@@ -59,6 +59,7 @@ class SymblConnectionHelper {
           // Use custom string "[PII_PCI_ENTITY]" to replace PII/PCI information with
           redactionString: "*****", // By default ****
         },
+        detectEntities: true,
         ...config,
       },
       trackers,
