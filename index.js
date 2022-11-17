@@ -10,7 +10,6 @@ const bodyParser = require("body-parser");
 
 const SymblConnectionHelper = require("./src/symbl/SymblConnectionHelper");
 const twilioRouter = require("./src/routes/twilio.route");
-const { getName } = require("./src/common/utilities");
 
 // const twilioClient = new TwilioClient(accountSid, authToken);
 
@@ -31,6 +30,9 @@ expressWebSocket(app, null, {
 
 const mode = process.env.MODE || "receive_call";
 const webHookDomain = process.env.WEBHOOK_DOMAIN;
+
+const agentPhone = process.env.AGENT_PHONE;
+const customerPhone = process.env.CUSTOMER_PHONE;
 
 const VoiceResponse = TwilioClient.twiml.VoiceResponse;
 
@@ -115,6 +117,14 @@ app.post("/twilio/statuschange", async (request, response) => {
     // console.log('Symbl: Conversation ID: ', conversationData.summaryUrl);
   }
 });
+
+const getName = (phoneNumber) => {
+  return phoneNumber
+    ? phoneNumber.trim() === agentPhone
+      ? "Agent"
+      : "Customer"
+    : "Unknown Caller";
+};
 
 let id = undefined;
 let subscribeConnection = undefined;
