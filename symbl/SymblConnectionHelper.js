@@ -33,7 +33,7 @@ class SymblConnectionHelper {
         this.speaker = speaker;
         this.connection = await this.sdk.startRealtimeRequest({
             id,
-            basePath: 'https://api.symbl.ai',
+            basePath: 'https://api-labs.symbl.ai',
             insightTypes: insightTypes || ["action_item", "question", "follow_up"],
             config: {
                 meetingTitle: 'My Test Meeting',
