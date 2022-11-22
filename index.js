@@ -212,6 +212,7 @@ app.ws("/twilio/media", async (ws, req) => {
       console.log("Added to participantConnections", participantConnections);
       console.log("Added to streamConnections", streamConnections);
       console.log("Added to streamParticipants", streamParticipants);
+      id = undefined;
     } else if (msg.event === "media") {
       // console.log(msg)
       const connection = streamConnections[msg.streamSid];
