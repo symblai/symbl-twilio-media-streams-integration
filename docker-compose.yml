@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  dev:
+    container_name: contact-centre_dev
+    image: contact-centre_dev:1.0.0
+    env_file:
+      - .env
+    build:
+      context: .
+      target: development
+      dockerfile: ./Dockerfile
+    command: npm run start:dev
+    ports:
+      - 3000:3000
+      - 9229:9229
+    networks:
+      - contact-centre-network
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    restart: unless-stopped
+  prod:
+    container_name: contact-centre_prd
+    image: contact-centre_prd:1.0.0
+    env_file:
+      - .env
+    build:
+      context: .
+      target: production
+      dockerfile: ./Dockerfile
+    command: node dist/main
+    ports:
+      - 3001:3001
+    networks:
+      - contact-centre-network
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    restart: unless-stopped
+
+networks:
+  contact-centre-network:
