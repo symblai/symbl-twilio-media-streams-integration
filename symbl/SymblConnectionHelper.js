@@ -1,6 +1,8 @@
 const uuid = require('uuid').v4;
 const trackers = require('./trackers');
 
+const API_BASE_URL = process.env.SYMBL_API_BASE_URL || 'https://api.symbl.ai'
+
 console.log('Symbl SDK Initialized.');
 class SymblConnectionHelper {
 
@@ -33,7 +35,7 @@ class SymblConnectionHelper {
         this.speaker = speaker;
         this.connection = await this.sdk.startRealtimeRequest({
             id,
-            basePath: 'https://api-labs.symbl.ai',
+            basePath: API_BASE_URL,
             insightTypes: insightTypes || ["action_item", "question", "follow_up"],
             config: {
                 meetingTitle: 'My Test Meeting',
@@ -44,14 +46,12 @@ class SymblConnectionHelper {
                 encoding: 'MULAW',
                 sentiment: true,
                 trackers: {
-                    // enableAllTrackers: true,
-                    interimResults: true
+                    enableAllTrackers: true,
+                    interimResults: false // Set to true if you want to get interim results for Trackers
                 },
-                customVocabularyStrength: [
-                    {text: 'Brittany'},
-                    {text: 'Toshish'},
-                    {text: 'QR Code'},
-                    {text: 'Sunday'}
+                customVocabularyStrength: [ // Add Custom vocabulary for names of people, places, companies, etc.
+                    {text: 'Twilio'},
+                    {text: 'Mark'}
                 ],
                 "redaction": {
                     // Enable identification of PII/PCI information
