@@ -1,6 +1,7 @@
 // Only use this if you have your own tracker management mechanism to decide dynamically which ones to use for a specific meeting
 // If not sure, keep this empty and use Custom Trackers feature from Symbl Platform Console to create your custom trackers.
 const trackers = [
+    // Examples -
     // {
     //     name: "Billing Issue",
     //     vocabulary: [
