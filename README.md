@@ -168,4 +168,9 @@ in the URL, and click "Connect".
 
 You will start receiving the results of the on-going call from Symbl.
 
+## Limitations
+This server implementation is just for understanding purposes on how to integrate with Twilio Voice calls with Symbl's
+Streaming APIs. The server does not do multiple call handling, and works with only configured phone numbers. In your application
+if you don't already have mechanism to track different parties' phone numbers (e.g. Agent, Customer), you would need to handle that.
+This implementation isn't recommended for production use.
 
